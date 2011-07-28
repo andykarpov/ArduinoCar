@@ -80,14 +80,14 @@ void loop()
 {
   if (vw_get_message(buf, &buflen)) {
      
-     // get received values from RX module
+     // get received values from RX module and decode them
      motorASpeed = buf[0];
      motorBSpeed = buf[1];
-     motorADir =  buf[2] & B00000001;
-     motorBDir =  buf[2] & B00000010;
-     btnForward = buf[2] & B00000100;
-     btnBackward= buf[2] & B00001000;
-     btnBeep    = buf[2] & B00010000;
+     motorADir =  (buf[2] & B00000001) ? 1 : 0;
+     motorBDir =  (buf[2] & B00000010) ? 1 : 0;
+     btnForward = (buf[2] & B00000100) ? HIGH : LOW;
+     btnBackward= (buf[2] & B00001000) ? HIGH : LOW;
+     btnBeep    = (buf[2] & B00010000) ? HIGH : LOW;
      
      // dump debug to serial
      Serial.print("A:");
