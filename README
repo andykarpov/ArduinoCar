@@ -1,0 +1,47 @@
+RC TRANSMITTER UNIT
+
+Hardware:
+1. Arduino Nano (Atmega 328)
+2. RF Link transmitter (433 MHz)
+3. 3-axis Accelerometer (ADXL330)
+4. 8x LEDS and 8x 220 Ohm rezistors
+5. 3x switches
+6. 9V Battery
+
+  TX unit                 Arduino Nano                  ADXL 330
+ ---------         ----------------------------      --------------
+ |   GND |---------| GND                   A7 |------| X axis     |
+ |   VCC |---------| +5V                   A6 |------| Y axis     |
+ |   DATA|---------| D13                  +5V |------| +5V        |
+ |   ANT |----     |                      GND |------| GND        |
+ ---------   |     |                          |      --------------
+             |     |                          |
+   antenna - o     |                          |
+                   |                          |   R1-R8 LED1-LED8
+    battery + o----| VCC                   D4 |---|===|---|<|-----|
+    battery - o----| GND                   D5 |---|===|---|<|-----|
+                   |                       D6 |---|===|---|<|-----|
+      Switches     |                       D8 |---|===|---|<|-----|
+   ----/ ----------| A0                    D9 |---|===|---|<|-----|
+   |---/ ----------| D2                    D10|---|===|---|<|-----|
+   |---/ ----------| D3                    D11|---|===|---|<|-----|
+   |               |                       D12|---|===|---|<|-----|
+   o               |                          |                   |
+  GND              |                          |                   |
+                   ----------------------------                   o
+                                                                 GND
+
+RC RECEIVER UNIT
+
+Hardware:
+1. Arduino Uno (Atmega 328)
+2. RF Link receiver module (433 MHz)
+3. Motor shield (LXXX)
+4. 2 DC 5V motors
+5. Chassis
+6. 6V battery
+7. 8x LEDS and 8x 220 Ohm rezistors
+8. 2x blue LEDs and 2x 220 Ohm rezistors
+
+TODO:
+
