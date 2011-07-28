@@ -35,7 +35,7 @@ const int btnForwardPin = A0; // forward button pin
 const int btnBackwardPin = 3; // backward button pin
 const int btnBeepPin = 2; // beep button pin
 
-const int txPin = A1; // transmitter pin
+const int txPin = 13; // transmitter pin
 
 byte btnForward; // forward button state
 byte btnBackward; // backward button state
@@ -84,7 +84,7 @@ void setup()
   digitalWrite(btnBeepPin, HIGH);
 
   // tx pin output  
-  pinMode(txPin, OUTPUT);
+  //pinMode(txPin, OUTPUT);
   
   // Initialise the IO and ISR
   vw_set_ptt_inverted(true); // Required for DR3100
