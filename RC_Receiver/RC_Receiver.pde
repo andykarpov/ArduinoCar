@@ -25,6 +25,8 @@
 const int rxPowerPin = A0; // rx power pin
 const int rxGndPin = A3; // rx gnd pin
 const int rxPin = A1; // rx digital pin
+const int txPin = A4; // redefine tx pin
+const int pttPin = A5; // redefine ptt pin
 
 /*const int ledCount = 4; // led count per motor
 const int ledPinsA[] = {9,10,11,12}; // leds for motor A
@@ -88,9 +90,9 @@ void setup()
    
   // initiate RX unit
   vw_set_rx_pin(rxPin);
-  vw_set_tx_pin(7);
-  vw_set_ptt_pin(6);
-  vw_setup(2000);  
+  vw_set_tx_pin(txPin);
+  vw_set_ptt_pin(pttPin);
+  vw_setup(2000);
   vw_rx_start();
 }
 

@@ -36,6 +36,8 @@ const int btnBackwardPin = 3; // backward button pin
 const int btnBeepPin = 2; // beep button pin
 
 const int txPin = 13; // transmitter pin
+const int rxPin = A1; // redefine rx pin
+const int pttPin = A3; // redefine ptt pin
 
 byte btnForward; // forward button state
 byte btnBackward; // backward button state
@@ -55,7 +57,7 @@ byte message[3]; // packed record to transmit over a virtualwire link
 void setup()
 {
   // initialize the serial communications (debug to serial)
-  Serial.begin(9600);
+  // Serial.begin(9600);
 
   // initial values for motor speed and directions
   motorADir = 1;
@@ -83,16 +85,12 @@ void setup()
   digitalWrite(btnBackwardPin, HIGH);
   digitalWrite(btnBeepPin, HIGH);
 
-  // tx pin output  
-  //pinMode(txPin, OUTPUT);
-  
-  vw_set_ptt_inverted(true); // Required for DR3100
-  vw_set_tx_pin(txPin); // tx pin different from default   
-  
+  vw_set_tx_pin(txPin); // tx pin different from default
+  vw_set_ptt_pin(pttPin);
+  vw_set_rx_pin(rxPin);
+  vw_set_ptt_inverted(true); // not confirmed requirement
   // Initialise the IO and ISR
   vw_setup(2000); // bits per sec
-  
-  
 }
 
 void loop()
@@ -183,16 +181,8 @@ void loop()
   Serial.println();
 */
 
-  //Serial.println(message);
-  
   // Transmitting a message over RX channel
-  
-  //digitalWrite(13, true); // Flash a light to show transmitting
   vw_send(message, 3); // sending message
   vw_wait_tx(); // Wait until the whole message is gone
-  //digitalWrite(13, false); // Turn off transmitting light
-    
-  // delay before next reading:
-  //delay(200);
 }
 

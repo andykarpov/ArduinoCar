@@ -22,11 +22,13 @@
 #include <string.h>
 #include <LiquidCrystal.h>
 
-LiquidCrystal lcd(8, 7, 6, 5, 4, 3, 2);
+LiquidCrystal lcd(12, 11, 10, 5, 4, 3, 2);
 
 const int rxPowerPin = A0; // rx power pin
 const int rxGndPin = A3; // rx gnd pin
 const int rxPin = A1; // rx digital pin
+const int txPin = A4; // redefine tx pin
+const int pttPin = A5; // redefine ptt pin
 
 byte buf[3]; // rx buffer
 byte buflen; // rx buffer length
@@ -67,9 +69,11 @@ void setup()
   digitalWrite(13, HIGH);
    
   // initiate RX unit
-  vw_setup(2000);
   vw_set_rx_pin(rxPin);
-  vw_rx_start(); 
+  vw_set_tx_pin(txPin);
+  vw_set_ptt_pin(pttPin);
+  vw_setup(2000);
+  vw_rx_start();
 }
 
 void loop()
@@ -99,9 +103,7 @@ void loop()
      lcd.print("        ");
 
   if (vw_get_message(buf, &buflen)) {
-     
-    digitalWrite(13, HIGH);
-    
+
      // get received values from RX module and decode them
      motorASpeed = buf[0];
      motorBSpeed = buf[1];
