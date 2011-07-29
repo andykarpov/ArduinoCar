@@ -71,8 +71,8 @@ void setup()
   motorBSpeed = 0;
  
    // debug to serial
-  Serial.begin(9600);
-  Serial.println("starting");
+  // Serial.begin(9600);
+  // Serial.println("starting");
  
   pinMode(rxPowerPin, OUTPUT);
   pinMode(rxGndPin, OUTPUT);
@@ -110,7 +110,7 @@ void loop()
      btnBeep    = (buf[2] & B00010000) ? HIGH : LOW;
      
      // dump debug to serial
-     Serial.print("A:");
+     /* Serial.print("A:");
      Serial.print(motorASpeed, HEX);
      Serial.print("|");
      Serial.print(motorADir, HEX);
@@ -126,7 +126,8 @@ void loop()
      Serial.print(btnBackward, HEX);
      Serial.print(" BE:");
      Serial.print(btnBeep, HEX);
-     Serial.println();      
+     Serial.println();
+     */
    }
    
      // set speed and directions
