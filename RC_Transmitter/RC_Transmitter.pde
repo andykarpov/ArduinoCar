@@ -86,10 +86,13 @@ void setup()
   // tx pin output  
   //pinMode(txPin, OUTPUT);
   
-  // Initialise the IO and ISR
   vw_set_ptt_inverted(true); // Required for DR3100
-  vw_set_tx_pin(txPin); // tx pin different from default 
+  vw_set_tx_pin(txPin); // tx pin different from default   
+  
+  // Initialise the IO and ISR
   vw_setup(2000); // bits per sec
+  
+  
 }
 
 void loop()
@@ -184,12 +187,12 @@ void loop()
   
   // Transmitting a message over RX channel
   
-  digitalWrite(13, true); // Flash a light to show transmitting
+  //digitalWrite(13, true); // Flash a light to show transmitting
   vw_send(message, 3); // sending message
   vw_wait_tx(); // Wait until the whole message is gone
-  digitalWrite(13, false); // Turn off transmitting light
+  //digitalWrite(13, false); // Turn off transmitting light
     
   // delay before next reading:
-  delay(100);
+  //delay(200);
 }
 

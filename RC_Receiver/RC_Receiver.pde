@@ -22,24 +22,26 @@
 #include <stdio.h>
 #include <string.h>
 
-const int rxPin = 3; // rx digital pin
+const int rxPowerPin = A0; // rx power pin
+const int rxGndPin = A3; // rx gnd pin
+const int rxPin = A1; // rx digital pin
 
-const int ledCount = 4; // led count per motor
+/*const int ledCount = 4; // led count per motor
 const int ledPinsA[] = {9,10,11,12}; // leds for motor A
 const int ledPinsB[] = {4,5,6,8}; // leds for motor B
 
 const int beepPin = 2; // buzzer pin
 const int forwardLightPin = 1; // forward light pin
 const int backwardLightPin = 13; // backward light pin
-
-/*
-const int motorAPin1 = 0;
-const int motorAPin2 = 1;
-const int motorASpeedPin = 3;
-const int motorBPin1 = 4;
-const int motorBPin2 = 5;
-const int motorBSpeedPin = 6;
 */
+
+const int motorAPin1 = 13;
+const int motorAPin2 = 12;
+const int motorASpeedPin = 10;
+const int motorBPin1 = 11;
+const int motorBPin2 = 8;
+const int motorBSpeedPin = 9;
+
 
 byte buf[3]; // rx buffer
 byte buflen; // rx buffer length
@@ -67,13 +69,29 @@ void setup()
   motorBSpeed = 0;
  
    // debug to serial
-  Serial.begin(2400);
+  Serial.begin(9600);
   Serial.println("starting");
  
+  pinMode(rxPowerPin, OUTPUT);
+  pinMode(rxGndPin, OUTPUT);
+  pinMode(rxPin, INPUT);
+
+  digitalWrite(rxPowerPin, HIGH);
+  digitalWrite(rxGndPin, LOW);
+
+  pinMode(motorAPin1, OUTPUT);
+  pinMode(motorAPin2, OUTPUT);
+  pinMode(motorASpeedPin, OUTPUT);
+  pinMode(motorBPin1, OUTPUT);
+  pinMode(motorBPin2, OUTPUT);
+  pinMode(motorBSpeedPin, OUTPUT);
+   
   // initiate RX unit
-  vw_setup(2000);
   vw_set_rx_pin(rxPin);
-  vw_rx_start(); 
+  vw_set_tx_pin(7);
+  vw_set_ptt_pin(6);
+  vw_setup(2000);  
+  vw_rx_start();
 }
 
 void loop()
@@ -91,21 +109,29 @@ void loop()
      
      // dump debug to serial
      Serial.print("A:");
-     Serial.print(motorASpeed);
+     Serial.print(motorASpeed, HEX);
      Serial.print("|");
-     Serial.print(motorADir);
+     Serial.print(motorADir, HEX);
      
      Serial.print(" B:");
-     Serial.print(motorBSpeed);
+     Serial.print(motorBSpeed, HEX);
      Serial.print("|");
-     Serial.print(motorBDir);
+     Serial.print(motorBDir, HEX);
      
      Serial.print(" FW:");
-     Serial.print(btnForward);
+     Serial.print(btnForward, HEX);
      Serial.print(" BW:");
-     Serial.print(btnBackward);
+     Serial.print(btnBackward, HEX);
      Serial.print(" BE:");
-     Serial.print(btnBeep);
-     Serial.println();
+     Serial.print(btnBeep, HEX);
+     Serial.println();      
    }
+   
+     // set speed and directions
+     analogWrite(motorASpeedPin, motorASpeed);
+     analogWrite(motorBSpeedPin, motorBSpeed);
+     digitalWrite(motorAPin1, (motorADir == 1) ? LOW : HIGH);
+     digitalWrite(motorAPin2, (motorADir == 1) ? HIGH : LOW);
+     digitalWrite(motorBPin1, (motorBDir == 1) ? HIGH : LOW);
+     digitalWrite(motorBPin2, (motorBDir == 1) ? LOW : HIGH);
 }
