@@ -21,6 +21,7 @@
 #include <VirtualWire.h>
 #include <stdio.h>
 #include <string.h>
+#include "pitches.h"
 
 const int rxPowerPin = A0; // rx power pin
 const int rxGndPin = A3; // rx gnd pin
@@ -28,22 +29,19 @@ const int rxPin = A1; // rx digital pin
 const int txPin = A4; // redefine tx pin
 const int pttPin = A5; // redefine ptt pin
 
-/*const int ledCount = 4; // led count per motor
-const int ledPinsA[] = {9,10,11,12}; // leds for motor A
-const int ledPinsB[] = {4,5,6,8}; // leds for motor B
+const int beepPin = 4; // buzzer pin
+const int forwardPin = 2; // forward light pin
+const int backwardPin = 3; // backward light pin
 
-const int beepPin = 2; // buzzer pin
-const int forwardLightPin = 1; // forward light pin
-const int backwardLightPin = 13; // backward light pin
-*/
+const int motorAPin1 = 13; // motor A pin 1
+const int motorAPin2 = 12; // motor A pin 2
+const int motorASpeedPin = 5; // motor A speed pin (pwm)
+const int motorBPin1 = 11; // motor B pin 1
+const int motorBPin2 = 8; // motor B pin 2
+const int motorBSpeedPin = 6; // motor B speed pin (pwm)
 
-const int motorAPin1 = 13;
-const int motorAPin2 = 12;
-const int motorASpeedPin = 5;
-const int motorBPin1 = 11;
-const int motorBPin2 = 8;
-const int motorBSpeedPin = 6;
-
+const int timeOut = 1000; // timeout, 1s
+const int toneDuration = 200; // tone duration, 0.2s
 
 byte buf[3]; // rx buffer
 byte buflen; // rx buffer length
@@ -57,6 +55,10 @@ byte motorASpeed; // motor A speed (0..255)
 
 byte motorBDir; // motor B direction (1 - forward, 0 - backward)
 byte motorBSpeed; // motor B speed (0..255)
+
+int lastReceived; // last received message timestamp
+int lastTone;
+boolean beepOn;
  
 void setup()
 {
@@ -69,6 +71,9 @@ void setup()
   motorBDir = 1;
   motorASpeed = 0;
   motorBSpeed = 0;
+  lastReceived = 0;
+  lastTone = 0;
+  beepOn = false;
  
    // debug to serial
   // Serial.begin(9600);
@@ -100,6 +105,8 @@ void loop()
 {
   if (vw_get_message(buf, &buflen)) {
      
+     lastReceived = millis();
+    
      // get received values from RX module and decode them
      motorASpeed = buf[0];
      motorBSpeed = buf[1];
@@ -128,15 +135,40 @@ void loop()
      Serial.print(btnBeep, HEX);
      Serial.println();
      */
-   
-     // set speed and directions
-     analogWrite(motorASpeedPin, motorASpeed);
-     analogWrite(motorBSpeedPin, motorBSpeed);
-     
-     digitalWrite(motorAPin1, ((motorADir == 1) ? HIGH : LOW));
-     digitalWrite(motorAPin2, ((motorADir == 1) ? LOW : HIGH));
-     
-     digitalWrite(motorBPin1, ((motorBDir == 1) ? HIGH : LOW));
-     digitalWrite(motorBPin2, ((motorBDir == 1) ? LOW : HIGH));     
   }
+  
+   // reset values on rx timeout
+   if (millis() - lastReceived > timeOut) {
+     motorADir = 1;
+     motorBDir = 1;
+     motorASpeed = 0;
+     motorBSpeed = 0;
+     btnForward = 0;
+     btnBackward = 0;
+     btnBeep = 0;
+   }
+  
+   // set speed and directions
+   analogWrite(motorASpeedPin, motorASpeed);
+   analogWrite(motorBSpeedPin, motorBSpeed);
+   
+   digitalWrite(motorAPin1, ((motorADir == 1) ? HIGH : LOW));
+   digitalWrite(motorAPin2, ((motorADir == 1) ? LOW : HIGH));
+   
+   digitalWrite(motorBPin1, ((motorBDir == 1) ? HIGH : LOW));
+   digitalWrite(motorBPin2, ((motorBDir == 1) ? LOW : HIGH)); 
+   
+   digitalWrite(forwardPin, ((btnForward == 1) ? HIGH : LOW));
+   digitalWrite(backwardPin, ((btnBackward == 1) ? HIGH : LOW));
+   
+   if (millis() - lastTone > toneDuration) {
+      lastTone = millis();
+      beepOn = !beepOn;
+   }
+   
+   if (beepOn & (millis() - lastReceived > timeOut)) {
+      tone(beepPin, NOTE_C4);
+   } else {
+     noTone(beepPin); 
+   }
 }
