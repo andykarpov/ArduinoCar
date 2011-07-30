@@ -88,7 +88,7 @@ void setup()
   vw_set_tx_pin(txPin); // tx pin different from default
   vw_set_ptt_pin(pttPin);
   vw_set_rx_pin(rxPin);
-  vw_set_ptt_inverted(true); // not confirmed requirement
+  //vw_set_ptt_inverted(true); // not confirmed requirement
   // Initialise the IO and ISR
   vw_setup(2000); // bits per sec
 }

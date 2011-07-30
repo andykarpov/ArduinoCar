@@ -39,10 +39,10 @@ const int backwardLightPin = 13; // backward light pin
 
 const int motorAPin1 = 13;
 const int motorAPin2 = 12;
-const int motorASpeedPin = 10;
+const int motorASpeedPin = 5;
 const int motorBPin1 = 11;
 const int motorBPin2 = 8;
-const int motorBSpeedPin = 9;
+const int motorBSpeedPin = 6;
 
 
 byte buf[3]; // rx buffer
@@ -128,13 +128,15 @@ void loop()
      Serial.print(btnBeep, HEX);
      Serial.println();
      */
-   }
    
      // set speed and directions
      analogWrite(motorASpeedPin, motorASpeed);
      analogWrite(motorBSpeedPin, motorBSpeed);
-     digitalWrite(motorAPin1, (motorADir == 1) ? LOW : HIGH);
-     digitalWrite(motorAPin2, (motorADir == 1) ? HIGH : LOW);
-     digitalWrite(motorBPin1, (motorBDir == 1) ? HIGH : LOW);
-     digitalWrite(motorBPin2, (motorBDir == 1) ? LOW : HIGH);
+     
+     digitalWrite(motorAPin1, ((motorADir == 1) ? HIGH : LOW));
+     digitalWrite(motorAPin2, ((motorADir == 1) ? LOW : HIGH));
+     
+     digitalWrite(motorBPin1, ((motorBDir == 1) ? HIGH : LOW));
+     digitalWrite(motorBPin2, ((motorBDir == 1) ? LOW : HIGH));     
+  }
 }

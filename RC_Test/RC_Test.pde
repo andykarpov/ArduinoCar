@@ -27,8 +27,8 @@ LiquidCrystal lcd(12, 11, 10, 5, 4, 3, 2);
 const int rxPowerPin = A0; // rx power pin
 const int rxGndPin = A3; // rx gnd pin
 const int rxPin = A1; // rx digital pin
-const int txPin = A4; // redefine tx pin
-const int pttPin = A5; // redefine ptt pin
+const int txPin = 1; // redefine tx pin
+const int pttPin = 0; // redefine ptt pin
 
 byte buf[3]; // rx buffer
 byte buflen; // rx buffer length
