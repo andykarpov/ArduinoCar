@@ -6,6 +6,9 @@
  The idea: allow to control a car without touching any buttons, 
  just to change an angle of RC unit car will turn left/right/forward/backward.
  
+ Adjustment note: going to use buttons to control forward / backward and use only one axis
+ to determine turn left / right.
+ 
  Hardware:
  0. Arduino Nano (atmega 328)
  1. Accelerometer ADXL330 connected to +5V, GND, X to A6,Y to A7
@@ -95,40 +98,42 @@ void setup()
 
 void loop()
 {
-  // reading x: transform 580...440 to -255...255, 0 = 515-518
-  xval = map(constrain(analogRead(xpin), 440, 580), 440, 580, -255, 255);
+  // reading button states
+  btnForward = (digitalRead(btnForwardPin) == LOW) ? HIGH : LOW;
+  btnBackward = (digitalRead(btnBackwardPin)) ? HIGH : LOW;
+  btnBeep = (digitalRead(btnBeepPin)) ? HIGH : LOW;
   
   // reading y: transform 440...580 to -255...255, 0 = 480-504
   yval = map(constrain(analogRead(ypin), 440, 580), 440, 580, -255, 255);
 
+  motorASpeed = 0;
+  motorBSpeed = 0;
+
+  if (btnForward == HIGH) {
+    motorADir = 1;
+    motorBDir = 1;
+    motorASpeed = 255;
+    motorBSpeed = 255;
+  } else if (btnBackward == HIGH) {
+    motorADir = 0;
+    motorBDir = 0;
+    motorASpeed = 255;
+    motorBSpeed = 255;
+  }
+
   // exclude range from -100 to 100
-  if (xval >= -100 and xval <= 100) xval = 0;
   if (yval >= -100 and yval <= 100) yval = 0;
 
-  // calculate motors direction
-  if (xval >= 0) {
-     motorADir = 1;
-     motorBDir = 1;
-  } else {
-     motorADir = 0;
-     motorBDir = 0;
-  }
-  
-  // calculate motors speed
-  motorASpeed = abs(xval);
-  motorBSpeed = abs(xval);
-  
-  // adjust motors speed
-  if (yval < 0) {
-     motorASpeed = motorASpeed - constrain(abs(yval), 0, motorASpeed);
-  }
   if (yval > 0) {
-     motorBSpeed = motorBSpeed - constrain(abs(yval), 0, motorBSpeed);
+     motorADir = (motorBDir == 1) ? 0 : 1;
+  }
+  if (yval < 0) {
+     motorBDir = (motorADir == 1) ? 0 : 1;
   }
 
   // calculate led levels (0...ledCount)
-  byte ledLevelA = map(motorASpeed, 0, 255, 0, ledCount);
-  byte ledLevelB = map(motorBSpeed, 0, 255, 0, ledCount);
+  byte ledLevelA = map(yval, 0, 255, 0, ledCount);
+  byte ledLevelB = map(yval, -255, 0, 0, ledCount);
   
   // loop over the LED array and turn on/off leds
   for (int thisLed = 0; thisLed < ledCount; thisLed++) {
@@ -147,39 +152,10 @@ void loop()
     }
   }
 
-  // reading buttons
-  btnForward = digitalRead(btnForwardPin);
-  btnBackward = digitalRead(btnBackwardPin);
-  btnBeep = digitalRead(btnBeepPin);
-
   // pack message
   message[0] = motorASpeed;
   message[1] = motorBSpeed;
-  message[2] = motorADir + motorBDir*2 + ((btnForward == LOW) ? 4 : 0) + ((btnBackward == LOW) ? 8 : 0) + ((btnBeep == LOW) ? 16: 0); // using 5 bits of 8
-
-  // do some debug:
-/*  Serial.print(xval);
-  Serial.print(":");  
-  Serial.print(yval);
-  Serial.print("\t");
-  Serial.print("A:");
-  Serial.print(motorADir);
-  Serial.print(":");
-  Serial.print(motorASpeed);
-  Serial.print("\t");
-  Serial.print("B:");
-  Serial.print(motorBDir);
-  Serial.print(":");
-  Serial.print(motorBSpeed);
-  Serial.print("\t");
-  Serial.print("FW:");
-  Serial.print((btnForward == HIGH) ? 1 : 0);
-  Serial.print(":BW:");
-  Serial.print((btnBackward == HIGH) ? 1 : 0);
-  Serial.print("BE:");
-  Serial.print((btnBeep == HIGH) ? 1 : 0);
-  Serial.println();
-*/
+  message[2] = motorADir + motorBDir*2 + ((btnForward == HIGH) ? 4 : 0) + ((btnBackward == HIGH) ? 8 : 0) + ((btnBeep == HIGH) ? 16: 0); // using 5 bits of 8
 
   // Transmitting a message over RX channel
   vw_send(message, 3); // sending message
