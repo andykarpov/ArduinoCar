@@ -30,7 +30,7 @@ const int txPin = A4; // redefine tx pin
 const int pttPin = A5; // redefine ptt pin
 
 const int beepPin = 4; // buzzer pin
-const int forwardPin = 8; // forward light pin
+const int forwardPin = 2; // forward light pin
 const int backwardPin = 7; // backward light pin
 
 const int motorAPin1 = 13; // motor A pin 1
@@ -40,7 +40,7 @@ const int motorBPin1 = 11; // motor B pin 1
 const int motorBPin2 = 8; // motor B pin 2
 const int motorBSpeedPin = 6; // motor B speed pin (pwm)
 
-const int timeOut = 1000; // timeout, 1s
+const int timeOut = 350; // timeout, 100ms
 const int toneDuration = 100; // tone duration, 0.2s
 
 byte buf[3]; // rx buffer
@@ -132,10 +132,16 @@ void loop()
      btnBeep = 0;
      noSignal = true;
    }
-  
+   
+   if (motorASpeed < 127) motorASpeed = 0;
+   if (motorBSpeed < 127) motorBSpeed = 0;
+   
    // set speed and directions
    analogWrite(motorASpeedPin, motorASpeed);
    analogWrite(motorBSpeedPin, motorBSpeed);
+   
+   //digitalWrite(motorASpeedPin, (motorASpeed > 127) ? HIGH: LOW);
+   //digitalWrite(motorBSpeedPin, (motorBSpeed > 127) ? HIGH :LOW);
    
    digitalWrite(motorAPin1, ((motorADir == 1) ? HIGH : LOW));
    digitalWrite(motorAPin2, ((motorADir == 1) ? LOW : HIGH));
