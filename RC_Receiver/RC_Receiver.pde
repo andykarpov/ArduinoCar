@@ -1,20 +1,40 @@
 /*
 
- RC Car Receiver Unit
+ ArduinoCar Receiver Unit
  version 1.0
  
- The idea: allow to control a car without touching any buttons, 
- just to change an angle of RC unit car will turn left/right/forward/backward.
+ Receive a 3 byte length message from transmitter and control motors, 
+ forward and backward leds and beep some tones via buzzer.
+ 
+ If there is no transmission detected or timeout - system will blink all leds 
+ and beep every 100ms.
+ 
+ Otherwise a car will be moved depends on received motorASpeed, motorBSpeed, 
+ motorADir and motorBDir.
+ 
+ Message data packed into the 3 bytes array:
+ byte 0 - motorASpeed
+ byte 1 - motorBSpeed
+ byte 3 - mixed data, each bit is a state, such as:
+ - bit 0 - motor A Direction (1 - forward, 0 - backward)
+ - bit 1 - motor B direction (1 - forward, 0 - backward)
+ - bit 2 - forward LED state ( 1 - HIGH, 0 - LOW)
+ - bit 3 - backward LED state ( 1 - HIGH, 0 - LOW)
+ - bit 4 - buzzer state ( 1 - play a buzz, 0 - silence) 
  
  Hardware:
  0. Arduino Uno (atmega 328)
- 2. 4 green LEDs and 4 red LEDs connected to D4,D5,D6,D8 and D9,D10,D11,D12 through a 220 Ohm Resistors
- 3. A motor shield
- 4. A 433 Mhz receiver unit connected to +5V, GND, 3 
+ 2. 2 blue LEDs connected to D2 and GND via 270 Ohm resistor.
+ 3. 2 red LEDs connected to D7 and GND via 270 Ohm resistor. 
+ 4. A motor shield (L298N based, modified to use PWM pins 5 and 6 
+    instead of 10 and 11 to avoid intersection with VirtualWire TIMER1 interrupt)
+ 5. A 433 Mhz receiver unit connected to +5V (or A0), GND (or A3), A1 (DATA) 
  
- External dependencies: VirtualWire library (www.open.com.au/mikem/arduino/VirtualWire.pdf)
+ External dependencies: VirtualWire library 
+ (www.open.com.au/mikem/arduino/VirtualWire.pdf)
  
- created 28 Jul 2011
+ created  28 Jul 2011
+ modified 01 Aug 2011
  by Andy Karpov <andy.karpov@gmail.com>
 */
 
@@ -26,8 +46,9 @@
 const int rxPowerPin = A0; // rx power pin
 const int rxGndPin = A3; // rx gnd pin
 const int rxPin = A1; // rx digital pin
-const int txPin = A4; // redefine tx pin
-const int pttPin = A5; // redefine ptt pin
+const int txPin = A4; // redefined tx pin
+const int pttPin = A5; // redefined ptt pin
+const int rxSpeed = 2000; // radio unit speed
 
 const int beepPin = 4; // buzzer pin
 const int forwardPin = 2; // forward light pin
@@ -40,8 +61,8 @@ const int motorBPin1 = 11; // motor B pin 1
 const int motorBPin2 = 8; // motor B pin 2
 const int motorBSpeedPin = 6; // motor B speed pin (pwm)
 
-const int timeOut = 350; // timeout, 100ms
-const int toneDuration = 100; // tone duration, 0.2s
+const int timeOut = 350; // rx timeout
+const int toneDuration = 100; // tone duration on rx timeout
 
 byte buf[3]; // rx buffer
 byte buflen; // rx buffer length
@@ -58,9 +79,10 @@ byte motorBSpeed; // motor B speed (0..255)
 
 unsigned long lastReceived; // last received message timestamp
 unsigned long lastTone; // last tone timestamp
-boolean beepOn; // beeper is on or off
+boolean beepOn; // beeper on flag
 boolean noSignal; // no signal flag
  
+// SETUP routine
 void setup()
 {
   // init defaults
@@ -77,12 +99,10 @@ void setup()
   beepOn = false;
   noSignal = true;
  
+  // set pin modes
   pinMode(rxPowerPin, OUTPUT);
   pinMode(rxGndPin, OUTPUT);
   pinMode(rxPin, INPUT);
-
-  digitalWrite(rxPowerPin, HIGH);
-  digitalWrite(rxGndPin, LOW);
 
   pinMode(motorAPin1, OUTPUT);
   pinMode(motorAPin2, OUTPUT);
@@ -93,21 +113,30 @@ void setup()
   
   pinMode(forwardPin, OUTPUT);
   pinMode(backwardPin, OUTPUT);
+
+  // enable radio unit power
+  digitalWrite(rxPowerPin, HIGH);
+  digitalWrite(rxGndPin, LOW);
    
   // initiate RX unit
   vw_set_rx_pin(rxPin);
   vw_set_tx_pin(txPin);
   vw_set_ptt_pin(pttPin);
-  vw_setup(2000);
+  vw_setup(rxSpeed);
   vw_rx_start();
 }
 
+// MAIN LOOP routine
 void loop()
 {
+  // get a current timestamp
   unsigned long curTime = millis();
+  
+  // virtualwire message processing
   if (vw_get_message(buf, &buflen)) {
      
-     lastReceived = curTime;
+     // set lastReceived timestamp
+     lastReceived = curTime; 
     
      // get received values from RX module and decode them
      motorASpeed = buf[0];
@@ -119,9 +148,10 @@ void loop()
      btnBeep    = (buf[2] & B00010000) ? HIGH : LOW;
   }
   
+  // set noSignal flag to false
   noSignal = false;
   
-   // reset values on rx timeout
+   // reset values (stop motors, turn off leds) on rx timeout
    if (curTime - lastReceived > timeOut) {
      motorADir = 1;
      motorBDir = 1;
@@ -132,26 +162,26 @@ void loop()
      btnBeep = 0;
      noSignal = true;
    }
-   
+
+   // allow motors to run only of PWN is more than 127   
    if (motorASpeed < 127) motorASpeed = 0;
    if (motorBSpeed < 127) motorBSpeed = 0;
    
-   // set speed and directions
+   // set motors speed
    analogWrite(motorASpeedPin, motorASpeed);
    analogWrite(motorBSpeedPin, motorBSpeed);
    
-   //digitalWrite(motorASpeedPin, (motorASpeed > 127) ? HIGH: LOW);
-   //digitalWrite(motorBSpeedPin, (motorBSpeed > 127) ? HIGH :LOW);
-   
+   // set motors direction   
    digitalWrite(motorAPin1, ((motorADir == 1) ? HIGH : LOW));
    digitalWrite(motorAPin2, ((motorADir == 1) ? LOW : HIGH));
-   
    digitalWrite(motorBPin1, ((motorBDir == 1) ? HIGH : LOW));
    digitalWrite(motorBPin2, ((motorBDir == 1) ? LOW : HIGH)); 
    
+   // set LEDs state
    digitalWrite(forwardPin, ((btnForward == 1) ? HIGH : LOW));
    digitalWrite(backwardPin, ((btnBackward == 1) ? HIGH : LOW));
    
+   // beep cycle on rx timeout
    if (curTime - lastTone > toneDuration) {
       lastTone = curTime;
       beepOn = !beepOn;
@@ -166,11 +196,11 @@ void loop()
          digitalWrite(forwardPin, LOW);
          digitalWrite(backwardPin, LOW);  
    }
-   
+ 
+   // normal beep, when received btnBeep state   
    if (btnBeep && !noSignal) {
      tone(beepPin, NOTE_E5);
    } else if (!btnBeep && !noSignal) {
      noTone(beepPin);
-   }
-   
+   }  
 }

@@ -1,24 +1,36 @@
 /*
 
- RC Car Transmitter Unit
+ ArduinoCar Transmitter Unit
  version 1.0
  
- The idea: allow to control a car without touching any buttons, 
- just to change an angle of RC unit car will turn left/right/forward/backward.
+ Read Y value from accelerometer unit and a button states 
+ (forward/backward/beep), convert them into the motors speed and directions, 
+ and transmit these values through the 433 MHz transmitter 
+ (using VirtualWire library).
  
- Adjustment note: going to use buttons to control forward / backward and use only one axis
- to determine turn left / right.
+ Message data packed into the 3 bytes array:
+ byte 0 - motorASpeed
+ byte 1 - motorBSpeed
+ byte 3 - mixed data, each bit is a state, such as:
+ - bit 0 - motor A Direction (1 - forward, 0 - backward)
+ - bit 1 - motor B direction (1 - forward, 0 - backward)
+ - bit 2 - forward LED state ( 1 - HIGH, 0 - LOW)
+ - bit 3 - backward LED state ( 1 - HIGH, 0 - LOW)
+ - bit 4 - buzzer state ( 1 - play a buzz, 0 - silence) 
  
  Hardware:
  0. Arduino Nano (atmega 328)
- 1. Accelerometer ADXL330 connected to +5V, GND, X to A6,Y to A7
- 2. 4 green LEDs and 4 red LEDs connected to D4,D5,D6,D8 and D9,D10,D11,D12 through a 220 Ohm Resistors
- 3. 3 buttons between GND and A0, D2, D3, without an external pullup resistors
- 4. A 433 Mhz transmitter unit connected to +5V, GND, A1 
+ 1. Accelerometer ADXL330 connected to +5V, GND, X to A7,Y to A6, Z to A2
+ 2. 4 green LEDs and 4 red LEDs connected to D4,D5,D6,D8 
+    and D9,D10,D11,D12 through a 270 Ohm Resistors
+ 3. A 3 buttons between GND and A0, D2, D3, without an external pullup resistors
+ 4. A 433 Mhz transmitter unit connected to +5V, GND, D13 
  
- External dependencies: VirtualWire library (www.open.com.au/mikem/arduino/VirtualWire.pdf)
+ External dependencies: VirtualWire library 
+ (www.open.com.au/mikem/arduino/VirtualWire.pdf)
  
- created 23 Jul 2011
+ created  23 Jul 2011
+ modified 01 Aug 2011
  by Andy Karpov <andy.karpov@gmail.com>
 */
 
@@ -41,6 +53,7 @@ const int btnBeepPin = 2; // beep button pin
 const int txPin = 13; // transmitter pin
 const int rxPin = A1; // redefine rx pin
 const int pttPin = A3; // redefine ptt pin
+const int txSpeed = 2000; // tx speed
 
 byte btnForward; // forward button state
 byte btnBackward; // backward button state
@@ -57,11 +70,9 @@ byte motorBSpeed; // motor B speed (0..255)
 
 byte message[3]; // packed record to transmit over a virtualwire link
 
+// SETUP routine
 void setup()
 {
-  // initialize the serial communications (debug to serial)
-  // Serial.begin(9600);
-
   // initial values for motor speed and directions
   motorADir = 1;
   motorASpeed = 0;
@@ -88,14 +99,14 @@ void setup()
   digitalWrite(btnBackwardPin, HIGH);
   digitalWrite(btnBeepPin, HIGH);
 
-  vw_set_tx_pin(txPin); // tx pin different from default
+  // tx unit init
+  vw_set_tx_pin(txPin); 
   vw_set_ptt_pin(pttPin);
   vw_set_rx_pin(rxPin);
-  //vw_set_ptt_inverted(true); // not confirmed requirement
-  // Initialise the IO and ISR
-  vw_setup(2000); // bits per sec
+  vw_setup(txSpeed);
 }
 
+// MAIN LOOP routine
 void loop()
 {
   // reading button states
@@ -137,25 +148,18 @@ void loop()
   
   // loop over the LED array and turn on/off leds
   for (int thisLed = 0; thisLed < ledCount; thisLed++) {
-    if (thisLed < ledLevelA) {
-      digitalWrite(ledPinsA[thisLed], HIGH);
-    } 
-    else {
-      digitalWrite(ledPinsA[thisLed], LOW); 
-    }
-
-    if (thisLed < ledLevelB) {
-      digitalWrite(ledPinsB[thisLed], HIGH);
-    } 
-    else {
-      digitalWrite(ledPinsB[thisLed], LOW); 
-    }
+    digitalWrite(ledPinsA[thisLed], (thisLed < ledLevelA) ? HIGH : LOW);
+    digitalWrite(ledPinsB[thisLed], (thisLed < ledLevelB) ? HIGH : LOW);
   }
 
   // pack message
   message[0] = motorASpeed;
   message[1] = motorBSpeed;
-  message[2] = motorADir + motorBDir*2 + ((btnForward == HIGH) ? 4 : 0) + ((btnBackward == HIGH) ? 8 : 0) + ((btnBeep == HIGH) ? 16: 0); // using 5 bits of 8
+  message[2] = motorADir + 
+               motorBDir*2 + 
+               ((btnForward == HIGH) ? 4 : 0) + 
+               ((btnBackward == HIGH) ? 8 : 0) + 
+               ((btnBeep == HIGH) ? 16: 0); 
 
   // Transmitting a message over RX channel
   vw_send(message, 3); // sending message
