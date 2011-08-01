@@ -100,8 +100,8 @@ void loop()
 {
   // reading button states
   btnForward = (digitalRead(btnForwardPin) == LOW) ? HIGH : LOW;
-  btnBackward = (digitalRead(btnBackwardPin)) ? HIGH : LOW;
-  btnBeep = (digitalRead(btnBeepPin)) ? HIGH : LOW;
+  btnBackward = (digitalRead(btnBackwardPin) == LOW) ? HIGH : LOW;
+  btnBeep = (digitalRead(btnBeepPin) == LOW) ? HIGH : LOW;
   
   // reading y: transform 440...580 to -255...255, 0 = 480-504
   yval = map(constrain(analogRead(ypin), 440, 580), 440, 580, -255, 255);
@@ -125,10 +125,10 @@ void loop()
   if (yval >= -100 and yval <= 100) yval = 0;
 
   if (yval > 0) {
-     motorADir = (motorBDir == 1) ? 0 : 1;
+     motorADir = (motorADir == 1) ? 0 : 1;
   }
   if (yval < 0) {
-     motorBDir = (motorADir == 1) ? 0 : 1;
+     motorBDir = (motorBDir == 1) ? 0 : 1;
   }
 
   // calculate led levels (0...ledCount)
