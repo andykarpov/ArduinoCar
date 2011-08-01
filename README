@@ -1,47 +1,28 @@
-RC TRANSMITTER UNIT
+*ArduinoCar project*
 
-Hardware:
-1. Arduino Nano (Atmega 328)
-2. RF Link transmitter (433 MHz)
-3. 3-axis Accelerometer (ADXL330)
-4. 8x LEDS and 8x 220 Ohm rezistors
-5. 3x switches
-6. 9V Battery
+Remote controlled car based on Arduino board.
 
-  TX unit                 Arduino Nano                  ADXL 330
- ---------         ----------------------------      --------------
- |   GND |---------| GND                   A7 |------| X axis     |
- |   VCC |---------| +5V                   A6 |------| Y axis     |
- |   DATA|---------| D13                  +5V |------| +5V        |
- |   ANT |----     |                      GND |------| GND        |
- ---------   |     |                          |      --------------
-             |     |                          |
-   antenna - o     |                          |
-                   |                          |   R1-R8 LED1-LED8
-    battery + o----| VCC                   D4 |---|===|---|<|-----|
-    battery - o----| GND                   D5 |---|===|---|<|-----|
-                   |                       D6 |---|===|---|<|-----|
-      Switches     |                       D8 |---|===|---|<|-----|
-   ----/ ----------| A0                    D9 |---|===|---|<|-----|
-   |---/ ----------| D2                    D10|---|===|---|<|-----|
-   |---/ ----------| D3                    D11|---|===|---|<|-----|
-   |               |                       D12|---|===|---|<|-----|
-   o               |                          |                   |
-  GND              |                          |                   |
-                   ----------------------------                   o
-                                                                 GND
+Both transmitter and receiver uses arduino boards, communicated over radio channel 
+using a cheap 433 MHz RX/TX units and VirtualWire library.
 
-RC RECEIVER UNIT
+Transmitter also uses ADXL 330 accelerometer to detect a wheel movement. 
 
-Hardware:
-1. Arduino Uno (Atmega 328)
-2. RF Link receiver module (433 MHz)
-3. Motor shield (LXXX)
-4. 2 DC 5V motors
-5. Chassis
-6. 6V battery
-7. 8x LEDS and 8x 220 Ohm rezistors
-8. 2x blue LEDs and 2x 220 Ohm rezistors
+Receiver based on 2 DC motor platform.
 
-TODO:
+The list of hardware:
 
+Transmitter unit:
+ 1. Arduino Nano (atmega 328)
+ 2. Accelerometer ADXL330 connected to +5V, GND, X to A7,Y to A6, Z to A2
+ 3. 4 green LEDs and 4 red LEDs connected to D4,D5,D6,D8 
+    and D9,D10,D11,D12 through a 270 Ohm Resistors
+ 4. A 3 buttons between GND and A0, D2, D3, without an external pullup resistors
+ 5. A 433 Mhz transmitter unit connected to +5V, GND, D13
+
+Receiver unit:
+ 1. Arduino Uno (atmega 328)
+ 2. 2 blue LEDs connected to D2 and GND via 270 Ohm resistor.
+ 3. 2 red LEDs connected to D7 and GND via 270 Ohm resistor. 
+ 4. A motor shield (L298N based, modified to use PWM pins 5 and 6 
+    instead of 10 and 11 to avoid intersection with VirtualWire TIMER1 interrupt)
+ 5. A 433 Mhz receiver unit connected to +5V (or A0), GND (or A3), A1 (DATA) 
