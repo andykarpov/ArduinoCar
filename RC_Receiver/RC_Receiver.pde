@@ -1,26 +1,24 @@
 /*
 
  ArduinoCar Receiver Unit
- version 1.0
+ version 1.1
  
- Receive a 3 byte length message from transmitter and control motors, 
+ Receive a 9 byte length message from transmitter and control motors, 
  forward and backward leds and beep some tones via buzzer.
  
  If there is no transmission detected or timeout - system will blink all leds 
  and beep every 100ms.
  
- Otherwise a car will be moved depends on received motorASpeed, motorBSpeed, 
- motorADir and motorBDir.
+ Otherwise a car will be moved depends on received x and y values 
+ from accelerometer and forward / backward button states.
  
- Message data packed into the 3 bytes array:
- byte 0 - motorASpeed
- byte 1 - motorBSpeed
- byte 3 - mixed data, each bit is a state, such as:
- - bit 0 - motor A Direction (1 - forward, 0 - backward)
- - bit 1 - motor B direction (1 - forward, 0 - backward)
- - bit 2 - forward LED state ( 1 - HIGH, 0 - LOW)
- - bit 3 - backward LED state ( 1 - HIGH, 0 - LOW)
- - bit 4 - buzzer state ( 1 - play a buzz, 0 - silence) 
+ Message data packed into the 9 bytes array:
+ byte 0..3 - X value
+ byte 4..7 - Y value 
+ byte 8 - mixed data, each bit is a state, such as:
+ - bit 0 - forward LED state ( 1 - HIGH, 0 - LOW)
+ - bit 1 - backward LED state ( 1 - HIGH, 0 - LOW)
+ - bit 2 - buzzer state ( 1 - play a buzz, 0 - silence) 
  
  Hardware:
  0. Arduino Uno (atmega 328)
@@ -34,7 +32,7 @@
  (www.open.com.au/mikem/arduino/VirtualWire.pdf)
  
  created  28 Jul 2011
- modified 01 Aug 2011
+ modified 14 Aug 2011
  by Andy Karpov <andy.karpov@gmail.com>
 */
 
@@ -64,41 +62,29 @@ const int motorBSpeedPin = 6; // motor B speed pin (pwm)
 const int timeOut = 350; // rx timeout
 const int toneDuration = 100; // tone duration on rx timeout
 
-byte buf[3]; // rx buffer
-byte buflen; // rx buffer length
+byte buf[9]; // rx buffer
+byte buflen = 9; // rx buffer length
 
-byte btnForward; // forward button state
-byte btnBackward; // backward button state
-byte btnBeep; // beep button state
+int xval = 0; // x value
+int yval = 0; // y value
+byte btnForward = LOW; // forward button state
+byte btnBackward = LOW; // backward button state
+byte btnBeep = LOW; // beep button state
 
-byte motorADir; // motor A direction (1 - forward, 0 - backward)
-byte motorASpeed; // motor A speed (0..255)
+byte motorADir = 1; // motor A direction (1 - forward, 0 - backward)
+byte motorASpeed = 0; // motor A speed (0..255)
 
-byte motorBDir; // motor B direction (1 - forward, 0 - backward)
-byte motorBSpeed; // motor B speed (0..255)
+byte motorBDir = 1; // motor B direction (1 - forward, 0 - backward)
+byte motorBSpeed = 0; // motor B speed (0..255)
 
-unsigned long lastReceived; // last received message timestamp
-unsigned long lastTone; // last tone timestamp
-boolean beepOn; // beeper on flag
-boolean noSignal; // no signal flag
+unsigned long lastReceived = 0; // last received message timestamp
+unsigned long lastTone = 0; // last tone timestamp
+boolean beepOn = false; // beeper on flag
+boolean noSignal = true; // no signal flag
  
 // SETUP routine
 void setup()
 {
-  // init defaults
-  buflen = 3;
-  btnForward = LOW;
-  btnBackward = LOW;
-  btnBeep = LOW;
-  motorADir = 1;
-  motorBDir = 1;
-  motorASpeed = 0;
-  motorBSpeed = 0;
-  lastReceived = 0;
-  lastTone = 0;
-  beepOn = false;
-  noSignal = true;
- 
   // set pin modes
   pinMode(rxPowerPin, OUTPUT);
   pinMode(rxGndPin, OUTPUT);
@@ -139,13 +125,29 @@ void loop()
      lastReceived = curTime; 
     
      // get received values from RX module and decode them
-     motorASpeed = buf[0];
-     motorBSpeed = buf[1];
-     motorADir =  (buf[2] & B00000001) ? 1 : 0;
-     motorBDir =  (buf[2] & B00000010) ? 1 : 0;
-     btnForward = (buf[2] & B00000100) ? HIGH : LOW;
-     btnBackward= (buf[2] & B00001000) ? HIGH : LOW;
-     btnBeep    = (buf[2] & B00010000) ? HIGH : LOW;
+    char val[4];
+    
+    // reading x value
+    val[0] = buf[0];
+    val[1] = buf[1];
+    val[2] = buf[2];
+    val[3] = buf[3];
+    xval = atoi(val);
+    
+    // reading x value
+    val[0] = buf[4];
+    val[1] = buf[5];
+    val[2] = buf[6];
+    val[3] = buf[7];
+    yval = atoi(val);
+    
+     // get button values and decode them
+     btnForward = (buf[8] & B00000001) ? HIGH : LOW;
+     btnBackward= (buf[8] & B00000010) ? HIGH : LOW;
+     btnBeep    = (buf[8] & B00000100) ? HIGH : LOW;
+     
+     // calculate motor directions and speed based on received values
+     // TODO:
   }
   
   // set noSignal flag to false
