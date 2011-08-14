@@ -106,8 +106,8 @@ void loop()
   yval = analogRead(ypin);
 
   // calculate led levels (0...ledCount)
-  int ledLevelA = map(xval, -600, 600, 0, ledCount);
-  int ledLevelB = map(yval, -600, 600, 0, ledCount);
+  int ledLevelA = map(yval, 512, 582, 0, ledCount);
+  int ledLevelB = map(yval, 512, 432, 0, ledCount);
   
   // loop over the LED array and turn on/off leds
   for (int thisLed = 0; thisLed < ledCount; thisLed++) {

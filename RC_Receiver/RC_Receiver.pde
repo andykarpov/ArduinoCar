@@ -59,8 +59,9 @@ const int motorBPin1 = 11; // motor B pin 1
 const int motorBPin2 = 8; // motor B pin 2
 const int motorBSpeedPin = 6; // motor B speed pin (pwm)
 
-const int timeOut = 350; // rx timeout
-const int toneDuration = 100; // tone duration on rx timeout
+const int timeOut = 500; // rx timeout
+const int numRetries = 2; // rx retries
+const int toneDuration = 50; // tone duration on rx timeout
 
 byte buf[9]; // rx buffer
 byte buflen = 9; // rx buffer length
@@ -71,16 +72,16 @@ byte btnForward = LOW; // forward button state
 byte btnBackward = LOW; // backward button state
 byte btnBeep = LOW; // beep button state
 
-byte motorADir = 1; // motor A direction (1 - forward, 0 - backward)
-byte motorASpeed = 0; // motor A speed (0..255)
+int motorADir = 1; // motor A direction (1 - forward, 0 - backward)
+int motorASpeed = 0; // motor A speed (0..255)
 
-byte motorBDir = 1; // motor B direction (1 - forward, 0 - backward)
-byte motorBSpeed = 0; // motor B speed (0..255)
+int motorBDir = 1; // motor B direction (1 - forward, 0 - backward)
+int motorBSpeed = 0; // motor B speed (0..255)
 
 unsigned long lastReceived = 0; // last received message timestamp
 unsigned long lastTone = 0; // last tone timestamp
 boolean beepOn = false; // beeper on flag
-boolean noSignal = true; // no signal flag
+int noSignal = 1; // no signal flag
  
 // SETUP routine
 void setup()
@@ -110,6 +111,7 @@ void setup()
   vw_set_ptt_pin(pttPin);
   vw_setup(rxSpeed);
   vw_rx_start();
+
 }
 
 // MAIN LOOP routine
@@ -118,66 +120,82 @@ void loop()
   // get a current timestamp
   unsigned long curTime = millis();
   
-  // virtualwire message processing
-  if (vw_get_message(buf, &buflen)) {
-     
-     // set lastReceived timestamp
-     lastReceived = curTime; 
-    
-     // get received values from RX module and decode them
-    char val[4];
-    
-    // reading x value
-    val[0] = buf[0];
-    val[1] = buf[1];
-    val[2] = buf[2];
-    val[3] = buf[3];
-    xval = atoi(val);
-    
-    // reading x value
-    val[0] = buf[4];
-    val[1] = buf[5];
-    val[2] = buf[6];
-    val[3] = buf[7];
-    yval = atoi(val);
-    
-     // get button values and decode them
-     btnForward = (buf[8] & B00000001) ? HIGH : LOW;
-     btnBackward= (buf[8] & B00000010) ? HIGH : LOW;
-     btnBeep    = (buf[8] & B00000100) ? HIGH : LOW;
-     
-     // calculate motor directions and speed based on received values
-     // TODO:
+  //waiting for transmission until timeout
+  if (vw_wait_rx_max(timeOut)) {
+  
+    // virtualwire message processing
+    if (vw_get_message(buf, &buflen)) {
+       
+       // get received values from RX module and decode them
+      char val[4];
+      
+      // reading x value
+      val[0] = buf[0];
+      val[1] = buf[1];
+      val[2] = buf[2];
+      val[3] = buf[3];
+      xval = atoi(val);
+      
+      // reading x value
+      val[0] = buf[4];
+      val[1] = buf[5];
+      val[2] = buf[6];
+      val[3] = buf[7];
+      yval = atoi(val);
+      
+       // get button values and decode them
+       btnForward = (buf[8] & B00000100) ? HIGH : LOW;
+       btnBackward= (buf[8] & B00001000) ? HIGH : LOW;
+       btnBeep    = (buf[8] & B00010000) ? HIGH : LOW;
+       
+       // calc motor direction
+       if (btnForward == HIGH) {
+          motorADir = 1;
+          motorBDir = 1;
+       }
+       if (btnBackward == HIGH) {
+          motorADir = 0;
+          motorBDir = 0;
+       }
+       
+       // calculate motor speed
+       if (btnForward == HIGH || btnBackward == HIGH) {
+          motorASpeed = 255;
+          motorBSpeed = 255;
+          
+          if (yval >= 532) {
+              motorADir = (motorBDir == 1) ? 0 : 1;
+           } else if (yval <=440) {
+              motorBDir = (motorADir == 1) ? 0 : 1;
+           }
+       } else {
+          motorASpeed = 0;
+          motorBSpeed = 0;
+       }
+    }
+    noSignal = 0;
+  } else {
+     noSignal++;
+     if (noSignal > numRetries) {
+       motorADir = 1;
+       motorBDir = 1;
+       motorASpeed = 0;
+       motorBSpeed = 0;
+       btnForward = 0;
+       btnBackward = 0;
+       btnBeep = 0;
+     }
   }
   
-  // set noSignal flag to false
-  noSignal = false;
-  
-   // reset values (stop motors, turn off leds) on rx timeout
-   if (curTime - lastReceived > timeOut) {
-     motorADir = 1;
-     motorBDir = 1;
-     motorASpeed = 0;
-     motorBSpeed = 0;
-     btnForward = 0;
-     btnBackward = 0;
-     btnBeep = 0;
-     noSignal = true;
-   }
-
-   // allow motors to run only of PWN is more than 127   
-   if (motorASpeed < 127) motorASpeed = 0;
-   if (motorBSpeed < 127) motorBSpeed = 0;
-   
-   // set motors speed
-   analogWrite(motorASpeedPin, motorASpeed);
-   analogWrite(motorBSpeedPin, motorBSpeed);
-   
    // set motors direction   
    digitalWrite(motorAPin1, ((motorADir == 1) ? HIGH : LOW));
    digitalWrite(motorAPin2, ((motorADir == 1) ? LOW : HIGH));
    digitalWrite(motorBPin1, ((motorBDir == 1) ? HIGH : LOW));
    digitalWrite(motorBPin2, ((motorBDir == 1) ? LOW : HIGH)); 
+
+   // set motors speed
+   analogWrite(motorASpeedPin, motorASpeed);
+   analogWrite(motorBSpeedPin, motorBSpeed);
    
    // set LEDs state
    digitalWrite(forwardPin, ((btnForward == 1) ? HIGH : LOW));

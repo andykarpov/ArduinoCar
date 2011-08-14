@@ -26,7 +26,7 @@
 
 // init LCD library, module connected to 12,11,10,5,4,3,2 digital pins
 // backlight is connected to pin 13 and GND
-LiquidCrystal lcd(12, 11, 10, 5, 4, 3, 2);
+LiquidCrystal lcd(8,7,6, 5, 4, 3, 2);
 
 const int rxPowerPin = A0; // rx power pin
 const int rxGndPin = A3; // rx gnd pin
@@ -90,9 +90,9 @@ void loop()
      
      lcd.print(" Y: ");
      lcd.print(yval, DEC);
-     lcd.print("        ");
+//     lcd.print("        ");
      
-     lcd.setCursor(0, 1);
+/*     lcd.setCursor(0, 1);
      
      lcd.print("FW:");
      lcd.print(btnForward, HEX);
@@ -101,7 +101,7 @@ void loop()
      lcd.print(" BE:");
      lcd.print(btnBeep, HEX);
      lcd.print("        ");
-
+*/
   if (vw_get_message(buf, &buflen)) {
 
     char val[4];
